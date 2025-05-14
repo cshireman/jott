@@ -7,7 +7,7 @@
 
 import Foundation
 
-@propertyWrapper
+@propertyWrapper @MainActor
 struct Injected<T> {
     private let keyPath: WritableKeyPath<InjectedValues, T>
     var wrappedValue: T {

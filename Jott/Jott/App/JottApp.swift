@@ -10,23 +10,32 @@ import SwiftData
 
 @main
 struct JottApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    
+    private var container: ModelContainer = ModelContainerHelper.shared.container
+    
+    init() {
+        setupDependencies()
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
+    }
+    
+    private func setupDependencies() {
+        // Initialize repositories with proper dependencies
+        InjectedValues[\.noteRepository] = NoteRepository(container: container)
+        InjectedValues[\.categoryRepository] = CategoryRepository(container: container)
+        InjectedValues[\.tagRepository] = TagRepository(container: container)
+        
+        // Initialize user preferences and set defaults if needed
+        let userPrefsRepo = UserPreferencesRepository()
+        if userPrefsRepo.getDouble(for: .autoTaggingConfidenceThreshold) == nil {
+            userPrefsRepo.resetToDefaults()
+        }
+        
+        InjectedValues[\.userPreferencesRepository] = userPrefsRepo
     }
 }
