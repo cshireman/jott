@@ -5,7 +5,6 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
-@testable import Jott
 import Foundation
 import SwiftData
 
@@ -32,7 +31,7 @@ class MockDataGenerator {
     
     /// Creates mock categories with hierarchical relationships
     /// Returns an array of all created categories
-    static func createMockCategories(in context: ModelContext) -> [Jott.Category] {
+    static func createMockCategories(in context: ModelContext) -> [Category] {
         // Create parent categories
         let work = Category(name: "Work", iconName: "briefcase", colorHex: "#FF2D55", isDefault: true, sortOrder: 1)
         let personal = Category(name: "Personal", iconName: "person", colorHex: "#FF9500", isDefault: true, sortOrder: 2)
@@ -119,7 +118,7 @@ class MockDataGenerator {
     @discardableResult
     static func createMockNotes(
         in context: ModelContext,
-        with categories: [Jott.Category],
+        with categories: [Category],
         and tags: [Tag]
     ) -> [Note] {
         // Sample notes content
@@ -330,7 +329,7 @@ class MockDataGenerator {
         title: String,
         content: String,
         in context: ModelContext,
-        category: Jott.Category? = nil,
+        category: Category? = nil,
         tags: [Tag] = []
     ) -> Note {
         let note = Note(
