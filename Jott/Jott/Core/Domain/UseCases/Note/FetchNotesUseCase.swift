@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 class FetchNotesUseCase {
     @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
     

@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 class FetchCategoriesUseCase {
     @Injected(\.categoryRepository) private var categoryRepository: CategoryRepositoryProtocol
     

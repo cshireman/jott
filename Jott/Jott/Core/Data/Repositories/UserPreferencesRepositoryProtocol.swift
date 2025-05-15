@@ -21,7 +21,7 @@ enum UserPreferenceKey: String {
     case iCloudSyncEnabled
 }
 
-protocol UserPreferencesRepositoryProtocol {
+protocol UserPreferencesRepositoryProtocol: Sendable {
     func getString(for key: UserPreferenceKey) -> String?
     func getBool(for key: UserPreferenceKey) -> Bool
     func getInt(for key: UserPreferenceKey) -> Int?

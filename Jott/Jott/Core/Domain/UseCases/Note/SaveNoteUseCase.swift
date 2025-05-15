@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 class SaveNoteUseCase {
     @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
     

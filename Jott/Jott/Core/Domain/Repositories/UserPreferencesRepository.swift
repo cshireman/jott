@@ -9,11 +9,12 @@
 import Foundation
 import SwiftUI
 
-class UserPreferencesRepository: UserPreferencesRepositoryProtocol {
-    private let userDefaults: UserDefaults
+final class UserPreferencesRepository: UserPreferencesRepositoryProtocol {
+    private var userDefaults: UserDefaults {
+        UserDefaults.standard
+    }
     
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
+    init() {
     }
     
     // MARK: - Getters

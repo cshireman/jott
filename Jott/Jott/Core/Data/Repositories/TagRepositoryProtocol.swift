@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol TagRepositoryProtocol {
+protocol TagRepositoryProtocol: Sendable {
     func fetchTags() async throws -> [Tag]
     func fetchPopularTags(limit: Int) async throws -> [Tag]
     func fetchTag(withId id: UUID) async throws -> Tag?

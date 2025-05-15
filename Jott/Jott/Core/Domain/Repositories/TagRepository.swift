@@ -9,7 +9,7 @@
 import Foundation
 import SwiftData
 
-class TagRepository: TagRepositoryProtocol {
+final class TagRepository: TagRepositoryProtocol {
     private let container: ModelContainer
     
     init(container: ModelContainer) {
