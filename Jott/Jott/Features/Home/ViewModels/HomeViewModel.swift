@@ -50,7 +50,7 @@ class HomeViewModel: ObservableObject {
                 let newNote = Note(title: "New Note", content: "")
                 try await saveNoteUseCase.execute(newNote)
                 // After saving, reload data
-                await loadData()
+                loadData()
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Failed to create note: \(error.localizedDescription)"

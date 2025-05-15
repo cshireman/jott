@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Tag {
+final class Tag: @unchecked Sendable {
     // Core properties
     var id: UUID
     var name: String

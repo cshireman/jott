@@ -9,7 +9,7 @@
 import Foundation
 import SwiftData
 
-class NoteRepository: NoteRepositoryProtocol {
+final class NoteRepository: NoteRepositoryProtocol {
     private let container: ModelContainer
     
     init(container: ModelContainer) {

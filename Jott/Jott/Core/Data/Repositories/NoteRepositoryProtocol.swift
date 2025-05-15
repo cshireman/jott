@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol NoteRepositoryProtocol {
+protocol NoteRepositoryProtocol: Sendable {
     func fetchNotes() async throws -> [Note]
     func fetchNotes(matching query: String) async throws -> [Note]
     func fetchNotes(inCategory categoryId: UUID?) async throws -> [Note]

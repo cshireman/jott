@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Category {
+final class Category: @unchecked Sendable {
     // Core properties
     var id: UUID
     var name: String

@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol CategoryRepositoryProtocol {
+protocol CategoryRepositoryProtocol: Sendable {
     func fetchCategories() async throws -> [Category]
     func fetchRootCategories() async throws -> [Category]
     func fetchCategory(withId id: UUID) async throws -> Category?

@@ -265,7 +265,6 @@ class MockDataGenerator {
         ]
         
         var notes: [Note] = []
-        let dateFormatter = ISO8601DateFormatter()
         let now = Date()
         
         for (index, (title, content)) in noteContents.enumerated() {

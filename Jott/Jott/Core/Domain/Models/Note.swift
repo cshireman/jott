@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Note {
+final class Note: @unchecked Sendable {
     var id: UUID
     var title: String
     var content: String

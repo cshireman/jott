@@ -9,7 +9,7 @@
 import Foundation
 import SwiftData
 
-class CategoryRepository: CategoryRepositoryProtocol {
+final class CategoryRepository: CategoryRepositoryProtocol {
     private let container: ModelContainer
     
     init(container: ModelContainer) {
