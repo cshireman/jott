@@ -10,6 +10,8 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
+    @State private var selectedNoteId: UUID?
+    @State private var showNoteDetail = false
     
     var body: some View {
         NavigationStack {
@@ -50,6 +52,20 @@ struct HomeView: View {
             .onAppear {
                 viewModel.loadData()
             }
+            .refreshable {
+                viewModel.loadData()
+            }
+            .navigationDestination(for: UUID.self) { noteId in
+                NoteDetailView(
+                    noteId: noteId,
+                    onDelete: {
+                        // Refresh notes after deletion
+                        Task {
+                            viewModel.loadData()
+                        }
+                    }
+                )
+            }
         }
     }
     
@@ -59,8 +75,11 @@ struct HomeView: View {
                 .font(.headline)
             
             ForEach(viewModel.pinnedNotes) { note in
-                NoteCardView(note: note)
+                NavigationLink(value: note.id) {
+                    NoteCardView(note: note)
+                }
             }
+            .padding(.horizontal)
         }
     }
     
@@ -75,8 +94,11 @@ struct HomeView: View {
                     .padding()
             } else {
                 ForEach(viewModel.recentNotes) { note in
-                    NoteCardView(note: note)
+                    NavigationLink(value: note.id) {
+                        NoteCardView(note: note)
+                    }
                 }
+                .padding(.horizontal)
             }
         }
     }

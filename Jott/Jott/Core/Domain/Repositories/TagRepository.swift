@@ -9,6 +9,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 final class TagRepository: TagRepositoryProtocol {
     private let container: ModelContainer
     
@@ -17,7 +18,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func fetchTags() async throws -> [Tag] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let descriptor = FetchDescriptor<Tag>(
             sortBy: [SortDescriptor(\.name)]
@@ -27,7 +28,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func fetchPopularTags(limit: Int) async throws -> [Tag] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         var descriptor = FetchDescriptor<Tag>(
             sortBy: [
@@ -41,7 +42,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func fetchTag(withId id: UUID) async throws -> Tag? {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Tag> {
             $0.id == id
@@ -54,7 +55,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func fetchTag(withName name: String) async throws -> Tag? {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Case-insensitive search for the tag name
         let predicate = #Predicate<Tag> {
@@ -68,7 +69,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func saveTag(_ tag: Tag) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // If this is a new tag that hasn't been inserted yet
         if tag.modelContext == nil {
@@ -79,7 +80,7 @@ final class TagRepository: TagRepositoryProtocol {
     }
     
     func deleteTag(_ tag: Tag) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         context.delete(tag)
         try context.save()

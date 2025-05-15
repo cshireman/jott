@@ -9,6 +9,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 final class NoteRepository: NoteRepositoryProtocol {
     private let container: ModelContainer
     
@@ -17,13 +18,13 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchNotes() async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         let descriptor = FetchDescriptor<Note>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
         return try context.fetch(descriptor)
     }
     
     func fetchNotes(matching query: String) async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         let lowercaseQuery = query.lowercased()
         
         let predicate = #Predicate<Note> {
@@ -39,7 +40,7 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchNotes(inCategory categoryId: UUID?) async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let descriptor: FetchDescriptor<Note>
         
@@ -68,7 +69,7 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchNotes(withTag tagId: UUID) async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Fetch the tag first
         let tagDescriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == tagId })
@@ -81,7 +82,7 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchRecentNotes(limit: Int) async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         var descriptor = FetchDescriptor<Note>(
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
@@ -92,7 +93,7 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchPinnedNotes() async throws -> [Note] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Note> {
             $0.isPinned == true
@@ -107,7 +108,7 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func fetchNote(withId id: UUID) async throws -> Note? {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Note> {
             $0.id == id
@@ -120,11 +121,12 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func saveNote(_ note: Note) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Update timestamp
         note.updatedAt = Date()
         
+        // If this is a new note that hasn't been inserted yet
         if note.modelContext == nil {
             context.insert(note)
         }
@@ -133,14 +135,14 @@ final class NoteRepository: NoteRepositoryProtocol {
     }
     
     func deleteNote(_ note: Note) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         context.delete(note)
         try context.save()
     }
     
     func updateNoteML(noteId: UUID, summary: String?, keyEntities: [String]?) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Find the note
         let predicate = #Predicate<Note> {
@@ -155,6 +157,58 @@ final class NoteRepository: NoteRepositoryProtocol {
         // Update ML properties
         note.summary = summary
         note.keyEntities = keyEntities
+        
+        try context.save()
+    }
+    
+    func updateNote(noteId: UUID, title: String, content: String, category: Category?, tags: [Tag]) async throws {
+        let context = container.mainContext
+        
+        // Find the note
+        let notePredicate = #Predicate<Note> { $0.id == noteId }
+        let noteDescriptor = FetchDescriptor<Note>(predicate: notePredicate)
+        
+        guard let note = try context.fetch(noteDescriptor).first else {
+            throw NSError(domain: "com.jott.error", code: 404, userInfo: [NSLocalizedDescriptionKey: "Note not found"])
+        }
+        
+        // Update basic properties
+        note.title = title
+        note.content = content
+        note.updatedAt = Date()
+        
+        // Set category by fetching it from the same context
+        if let categoryId = category?.id {
+            let categoryDescriptor = FetchDescriptor<Category>(predicate: #Predicate { $0.id == categoryId })
+            if let fetchedCategory = try context.fetch(categoryDescriptor).first {
+                note.category = fetchedCategory
+            } else {
+                note.category = nil
+            }
+        } else {
+            note.category = nil
+        }
+        
+        // Handle tags
+        // First, remove current tags
+        note.tags.forEach { tag in
+            tag.notes.removeAll(where: { $0.id == noteId })
+            tag.usageCount = max(0, tag.usageCount - 1)
+        }
+        note.tags.removeAll()
+        
+        // Then add tags by fetching them from the same context
+        let tagIds = tags.map { $0.id }
+        if !tagIds.isEmpty {
+            let tagDescriptor = FetchDescriptor<Tag>(predicate: #Predicate { tagIds.contains($0.id) })
+            let fetchedTags = try context.fetch(tagDescriptor)
+            
+            for tag in fetchedTags {
+                note.tags.append(tag)
+                tag.notes.append(note)
+                tag.usageCount += 1
+            }
+        }
         
         try context.save()
     }

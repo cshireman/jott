@@ -15,6 +15,7 @@ struct NoteCardView: View {
             Text(note.title)
                 .font(.headline)
                 .lineLimit(1)
+                .foregroundColor(.primary)
             
             Text(note.content)
                 .font(.subheadline)

@@ -9,6 +9,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 final class CategoryRepository: CategoryRepositoryProtocol {
     private let container: ModelContainer
     
@@ -17,7 +18,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func fetchCategories() async throws -> [Category] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let descriptor = FetchDescriptor<Category>(
             sortBy: [
@@ -30,7 +31,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func fetchRootCategories() async throws -> [Category] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Category> {
             $0.parentCategory == nil
@@ -48,7 +49,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func fetchCategory(withId id: UUID) async throws -> Category? {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Category> {
             $0.id == id
@@ -61,7 +62,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func fetchChildCategories(ofCategoryId parentId: UUID) async throws -> [Category] {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // First get the parent category
         let parentPredicate = #Predicate<Category> {
@@ -83,7 +84,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func saveCategory(_ category: Category) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Update timestamp
         category.updatedAt = Date()
@@ -97,7 +98,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func deleteCategory(_ category: Category) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         // Note: Due to the delete rule set on relationships,
         // child categories will have their parentCategory set to nil
@@ -108,7 +109,7 @@ final class CategoryRepository: CategoryRepositoryProtocol {
     }
     
     func updateCategorySortOrder(categoryId: UUID, newSortOrder: Int) async throws {
-        let context = ModelContext(container)
+        let context = container.mainContext
         
         let predicate = #Predicate<Category> {
             $0.id == categoryId

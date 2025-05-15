@@ -20,7 +20,7 @@ final class Note: @unchecked Sendable {
     @Relationship(.unique, deleteRule: .nullify, inverse: \Tag.notes)
     var tags: [Tag] = []
     
-    @Relationship(.unique, deleteRule: .nullify, inverse: \Category.notes)
+    @Relationship(deleteRule: .nullify, inverse: \Category.notes)
     var category: Category?
     
     // Derived properties for ML features

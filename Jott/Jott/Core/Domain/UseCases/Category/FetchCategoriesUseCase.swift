@@ -19,8 +19,4 @@ class FetchCategoriesUseCase {
     func executeRootOnly() async throws -> [Category] {
         return try await categoryRepository.fetchRootCategories()
     }
-    
-    func execute(children ofCategoryId: UUID) async throws -> [Category] {
-        return try await categoryRepository.fetchChildCategories(ofCategoryId: ofCategoryId)
-    }
 }

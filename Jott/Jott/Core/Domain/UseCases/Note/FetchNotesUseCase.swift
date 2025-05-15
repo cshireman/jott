@@ -16,6 +16,10 @@ class FetchNotesUseCase {
         return try await noteRepository.fetchNotes()
     }
     
+    func execute(id: UUID) async throws -> Note? {
+        return try await noteRepository.fetchNote(withId: id)
+    }
+    
     func execute(matching query: String) async throws -> [Note] {
         return try await noteRepository.fetchNotes(matching: query)
     }

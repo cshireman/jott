@@ -19,4 +19,5 @@ protocol NoteRepositoryProtocol: Sendable {
     func saveNote(_ note: Note) async throws
     func deleteNote(_ note: Note) async throws
     func updateNoteML(noteId: UUID, summary: String?, keyEntities: [String]?) async throws
+    func updateNote(noteId: UUID, title: String, content: String, category: Category?, tags: [Tag]) async throws
 }
