@@ -15,131 +15,131 @@ struct SearchView: View {
     @State private var isVisible = false
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Search bar
-                searchBar
-                
-                // Applied filters
-                if !viewModel.selectedCategories.isEmpty || !viewModel.selectedTags.isEmpty || viewModel.showRecentOnly {
-                    appliedFiltersView
-                }
-                
-                // Content
-                ZStack {
-                    if viewModel.isSearching {
-                        ProgressView()
-                            .transition(.opacity)
-                            .animation(.easeInOut, value: isVisible)
-                    } else if viewModel.searchText.isEmpty && !viewModel.selectedCategories.isEmpty && !viewModel.selectedTags.isEmpty && !viewModel.showRecentOnly {
-                        // Empty initial state
-                        VStack(spacing: 24) {
-                            Image(systemName: "doc.text.magnifyingglass")
-                                .font(.system(size: 48))
-                                .foregroundColor(.secondary)
+        
+        VStack(spacing: 0) {
+            // Search bar
+            searchBar
+            
+            // Applied filters
+            if !viewModel.selectedCategories.isEmpty || !viewModel.selectedTags.isEmpty || viewModel.showRecentOnly {
+                appliedFiltersView
+            }
+            
+            // Content
+            ZStack {
+                if viewModel.isSearching {
+                    ProgressView()
+                        .transition(.opacity)
+                        .animation(.easeInOut, value: isVisible)
+                } else if viewModel.searchText.isEmpty && !viewModel.selectedCategories.isEmpty && !viewModel.selectedTags.isEmpty && !viewModel.showRecentOnly {
+                    // Empty initial state
+                    VStack(spacing: 24) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        
+                        VStack(spacing: 8) {
+                            Text("Ready to search")
+                                .font(.title2.bold())
                             
-                            VStack(spacing: 8) {
-                                Text("Ready to search")
-                                    .font(.title2.bold())
-                                
-                                Text("Type in the search bar or use filters")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 32)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
-                        .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
-                    } else if viewModel.searchResults.isEmpty {
-                        // No results state
-                        VStack(spacing: 24) {
-                            Image(systemName: "doc.text.questionmark")
-                                .font(.system(size: 48))
+                            Text("Type in the search bar or use filters")
+                                .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
-                            VStack(spacing: 8) {
-                                Text("No matches found")
-                                    .font(.title2.bold())
-                                
-                                Text("Try adjusting your search or filters")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
-                        .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
-                    } else {
-                        // Results list
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(viewModel.searchResults) { note in
-                                    SearchResultRow(note: note) {
-                                        selectedNoteId = note.id
-                                        showNoteDetail = true
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                            .padding(.vertical)
-                        }
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
-                        .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
                     }
-                }
-                
-                // Recent searches
-                if viewModel.searchText.isEmpty && !viewModel.recentSearches.isEmpty {
-                    recentSearchesView
-                }
-            }
-            .navigationTitle("Search")
-            .navigationDestination(isPresented: $showNoteDetail) {
-                if let noteId = selectedNoteId {
-                    NoteDetailView(noteId: noteId)
-                }
-            }
-            .sheet(isPresented: $showFilterSheet) {
-                SearchFilterView(
-                    categories: viewModel.availableCategories,
-                    tags: viewModel.availableTags,
-                    selectedCategories: $viewModel.selectedCategories,
-                    selectedTags: $viewModel.selectedTags,
-                    showRecentOnly: $viewModel.showRecentOnly
-                )
-            }
-            .alert("Error", isPresented: Binding<Bool>(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
-            .onChange(of: viewModel.selectedTags) { _, _ in
-                Task {
-                    await viewModel.performSearch()
-                }
-            }
-            .onChange(of: viewModel.selectedCategories) { _, _ in
-                Task {
-                    await viewModel.performSearch()
-                }
-            }
-            .onChange(of: viewModel.showRecentOnly) { _, _ in
-                Task {
-                    await viewModel.performSearch()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
+                } else if viewModel.searchResults.isEmpty {
+                    // No results state
+                    VStack(spacing: 24) {
+                        Image(systemName: "questionmark")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        
+                        VStack(spacing: 8) {
+                            Text("No matches found")
+                                .font(.title2.bold())
+                            
+                            Text("Try adjusting your search or filters")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
+                } else {
+                    // Results list
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(viewModel.searchResults) { note in
+                                SearchResultRow(note: note) {
+                                    selectedNoteId = note.id
+                                    showNoteDetail = true
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                        .padding(.vertical)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .animation(.easeInOut(duration: 0.3).delay(0.1), value: isVisible)
                 }
             }
-            .onAppear {
-                isVisible = true
-            }
-            .onDisappear {
-                isVisible = false
+            
+            // Recent searches
+            if viewModel.searchText.isEmpty && !viewModel.recentSearches.isEmpty {
+                recentSearchesView
             }
         }
+        .navigationTitle("Search")
+        .navigationDestination(isPresented: $showNoteDetail) {
+            if let noteId = selectedNoteId {
+                NoteDetailView(noteId: noteId)
+            }
+        }
+        .sheet(isPresented: $showFilterSheet) {
+            SearchFilterView(
+                categories: viewModel.availableCategories,
+                tags: viewModel.availableTags,
+                selectedCategories: $viewModel.selectedCategories,
+                selectedTags: $viewModel.selectedTags,
+                showRecentOnly: $viewModel.showRecentOnly
+            )
+        }
+        .alert("Error", isPresented: Binding<Bool>(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+        .onChange(of: viewModel.selectedTags) { _, _ in
+            Task {
+                await viewModel.performSearch()
+            }
+        }
+        .onChange(of: viewModel.selectedCategories) { _, _ in
+            Task {
+                await viewModel.performSearch()
+            }
+        }
+        .onChange(of: viewModel.showRecentOnly) { _, _ in
+            Task {
+                await viewModel.performSearch()
+            }
+        }
+        .onAppear {
+            isVisible = true
+        }
+        .onDisappear {
+            isVisible = false
+        }
+        
     }
     
     private var searchBar: some View {

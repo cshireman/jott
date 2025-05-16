@@ -36,7 +36,10 @@ final class NoteEditorViewModel: ObservableObject {
     private let fetchNoteUseCase = FetchNotesUseCase()
     private let fetchTagsUseCase = FetchTagsUseCase()
     private let createTagUseCase = CreateTagUseCase()
+    
     private let fetchCategoriesUseCase = FetchCategoriesUseCase()
+    private let fetchCategoryUseCase = FetchCategoryUseCase()
+    private let getUserPreferencesUseCase = GetUserPreferencesUseCase()
     
     // Text analysis service
     private let textAnalysisService = TextAnalysisService()
@@ -62,15 +65,35 @@ final class NoteEditorViewModel: ObservableObject {
             self.originalContent = note.content
             self.originalCategory = note.category
             self.originalTags = note.tags
+        } else {
+            // For new notes, check if there's a default category set
+            let defaultCategoryId = getUserPreferencesUseCase.getUUID(for: .defaultCategoryId)
+            
+            if let defaultCategoryId = defaultCategoryId {
+                // Load the default category - this needs to be done asynchronously
+                Task {
+                    do {
+                        if let defaultCategory = try await fetchCategoryUseCase.execute(id: defaultCategoryId) {
+                            await MainActor.run {
+                                self.category = defaultCategory
+                            }
+                        }
+                    } catch {
+                        print("Failed to load default category: \(error.localizedDescription)")
+                    }
+                }
+            }
         }
         
         // Setup timers
         setupTimers()
+        setupSettingsObservers()
     }
     
     deinit {
         analysisTimer?.cancel()
         saveTimer?.cancel()
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Public Methods
@@ -191,6 +214,36 @@ final class NoteEditorViewModel: ObservableObject {
         }
     }
     
+    private func setupSettingsObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAutoTaggingChange),
+            name: Notification.Name("AutoTaggingChanged"),
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAutoSummarizationChange),
+            name: Notification.Name("AutoSummarizationChanged"),
+            object: nil
+        )
+    }
+    
+    @objc private func handleAutoTaggingChange() {
+        // Re-analyze content when auto-tagging setting changes
+        Task {
+            await analyzeContent()
+        }
+    }
+
+    @objc private func handleAutoSummarizationChange() {
+        // Re-analyze content when auto-summarization setting changes
+        Task {
+            await analyzeContent()
+        }
+    }
+    
     private func tagsEqual(_ tags1: [Tag], _ tags2: [Tag]) -> Bool {
         guard tags1.count == tags2.count else { return false }
         let ids1 = Set(tags1.map { $0.id })
@@ -199,6 +252,9 @@ final class NoteEditorViewModel: ObservableObject {
     }
     
     private func analyzeContent() async {
+        let enableAutoTagging = getUserPreferencesUseCase.getBool(for: .enableAutoTagging)
+        let enableAutoSummarization = getUserPreferencesUseCase.getBool(for: .enableAutoSummarization)
+            
         // Skip analysis for very short content or if analysis is disabled
         guard content.count > 20 else {
             // Clear suggestions for very short content
@@ -207,18 +263,22 @@ final class NoteEditorViewModel: ObservableObject {
         }
         
         do {
+            
+            if enableAutoTagging {
+                let allTags = try await fetchTagsUseCase.execute()
+                
+                // Get suggested tags using our enhanced service
+                let suggested = await textAnalysisService.suggestTags(
+                    from: content,
+                    existingTags: tags,
+                    userTags: allTags
+                )
+                
+                // Update the suggested tags on the main thread
+                suggestedTags = suggested
+            }
             // Fetch all user tags
-            let allTags = try await fetchTagsUseCase.execute()
             
-            // Get suggested tags using our enhanced service
-            let suggested = await textAnalysisService.suggestTags(
-                from: content,
-                existingTags: tags,
-                userTags: allTags
-            )
-            
-            // Update the suggested tags on the main thread
-            suggestedTags = suggested
             
             // If note is uncategorized, try to suggest a category
             if category == nil {
@@ -231,7 +291,7 @@ final class NoteEditorViewModel: ObservableObject {
             }
             
             // For longer notes, generate summary and extract key entities
-            if content.count > 200, let noteId = noteId {
+            if enableAutoSummarization && content.count > 200, let noteId = noteId {
                 // Use the enhanced analysis capabilities
                 let analysis = await textAnalysisService.analyzeContent(content)
                 

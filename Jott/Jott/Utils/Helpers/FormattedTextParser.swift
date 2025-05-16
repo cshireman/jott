@@ -9,15 +9,12 @@ import Foundation
 import SwiftUI
 
 class FormattedTextParser {
-    // Convert text with markers to array of formatted text segments
-    static func parse(text: String) -> [FormattedTextSegment] {
-        // Preprocess text to handle special cases
-        var processedText = text
-        
-        // Handle processing for list items and other block-level formats
-        let blockPatterns: [(pattern: String, handler: (String) -> String)] = [
-            // Bullet lists: "- Item" -> "• Item"
-            ("^([ \\t]*)- (.+)$", { match -> String in
+    @MainActor
+    private static let blockPatterns: [(pattern: NSRegularExpression, handler: (String) -> String)] = {
+        return [
+            // Bullet lists
+            (try! NSRegularExpression(pattern: "^([ \\t]*)- (.+)$", options: .anchorsMatchLines),
+             { match in
                 if let range = match.range(of: "^([ \\t]*)- ", options: .regularExpression) {
                     let prefix = match[range]
                     return prefix.replacingOccurrences(of: "- ", with: "• ") + match[range.upperBound...]
@@ -26,10 +23,12 @@ class FormattedTextParser {
             }),
             
             // Numbered lists: "1. Item" -> "1. Item" (keep as is, but identify for styling)
-            ("^([ \\t]*)\\d+\\. (.+)$", { $0 }),
+            (try! NSRegularExpression(pattern: "^([ \\t]*)\\d+\\. (.+)$", options: .anchorsMatchLines),
+             { $0 }),
             
             // Checkboxes: "- [ ] Item" -> "☐ Item"
-            ("^([ \\t]*)- \\[ \\] (.+)$", { match -> String in
+            (try! NSRegularExpression(pattern: "^([ \\t]*)- \\[ \\] (.+)$", options: .anchorsMatchLines),
+             { match in
                 if let range = match.range(of: "^([ \\t]*)- \\[ \\] ", options: .regularExpression) {
                     let prefix = match[..<range.lowerBound]
                     return prefix + "☐ " + match[range.upperBound...]
@@ -38,7 +37,8 @@ class FormattedTextParser {
             }),
             
             // Checked items: "- [x] Item" -> "☑ Item"
-            ("^([ \\t]*)- \\[x\\] (.+)$", { match -> String in
+            (try! NSRegularExpression(pattern: "^([ \\t]*)- \\[x\\] (.+)$", options: .anchorsMatchLines),
+             { match in
                 if let range = match.range(of: "^([ \\t]*)- \\[x\\] ", options: .regularExpression) {
                     let prefix = match[..<range.lowerBound]
                     return prefix + "☑ " + match[range.upperBound...]
@@ -47,87 +47,83 @@ class FormattedTextParser {
             }),
             
             // Headings: "# Heading" -> "Heading" (but with heading style)
-            ("^(#+) (.+)$", { $0 })
+            (try! NSRegularExpression(pattern: "^(#+) (.+)$", options: .anchorsMatchLines),
+             { $0 })
         ]
-        
-        // Apply block-level transformations
+    }()
+    
+    private static let inlineMarkers = [
+        ("**", "**"), // bold
+        ("_", "_"),   // italic
+        ("==", "==")  // highlight
+    ]
+    
+    @MainActor
+    static func parse(text: String) -> [FormattedTextSegment] {
+        // Pre-process text for block-level formats
+        var processedText = text
         let lines = processedText.components(separatedBy: .newlines)
         var transformedLines: [String] = []
         
         for line in lines {
             var transformedLine = line
-            
             for (pattern, handler) in blockPatterns {
-                if let _ = line.range(of: pattern, options: .regularExpression) {
-                    transformedLine = handler(line)
+                if let match = pattern.firstMatch(in: line, options: [], range: NSRange(location: 0, length: line.utf16.count)) {
+                    let nsString = line as NSString
+                    transformedLine = handler(nsString as String)
                     break
                 }
             }
-            
             transformedLines.append(transformedLine)
         }
         
         processedText = transformedLines.joined(separator: "\n")
         
-        // Create segments based on inline formatting patterns
+        // Create segments with optimized inline format processing
         var segments: [FormattedTextSegment] = []
         var currentIndex = processedText.startIndex
         
         while currentIndex < processedText.endIndex {
-            // Check for the start of each format marker
-            if let boldRange = processedText.range(of: "**", range: currentIndex..<processedText.endIndex),
-               boldRange.lowerBound == currentIndex,
-               let endBold = processedText.range(of: "**", range: boldRange.upperBound..<processedText.endIndex) {
-                
-                // Extract the bold text
-                let boldText = processedText[boldRange.upperBound..<endBold.lowerBound]
-                
-                // Add a bold segment
-                segments.append(FormattedTextSegment(
-                    text: String(boldText),
-                    font: .boldSystemFont(ofSize: UIFont.systemFontSize),
-                    foregroundColor: nil
-                ))
-                
-                // Move past the end marker
-                currentIndex = endBold.upperBound
+            var foundFormat = false
+            
+            // Check for format markers
+            for (startMarker, endMarker) in inlineMarkers {
+                if processedText[currentIndex...].starts(with: startMarker),
+                   let endRange = processedText.range(of: endMarker, range: processedText.index(after: currentIndex)..<processedText.endIndex) {
+                    
+                    let formatText = processedText[processedText.index(currentIndex, offsetBy: startMarker.count)..<endRange.lowerBound]
+                    
+                    // Add formatted segment
+                    let segment: FormattedTextSegment
+                    switch startMarker {
+                    case "**":
+                        segment = FormattedTextSegment(
+                            text: String(formatText),
+                            font: .boldSystemFont(ofSize: UIFont.systemFontSize)
+                        )
+                    case "_":
+                        segment = FormattedTextSegment(
+                            text: String(formatText),
+                            font: .italicSystemFont(ofSize: UIFont.systemFontSize)
+                        )
+                    case "==":
+                        segment = FormattedTextSegment(
+                            text: String(formatText),
+                            backgroundColor: Color.yellow.opacity(0.3)
+                        )
+                    default:
+                        segment = FormattedTextSegment(text: String(formatText))
+                    }
+                    
+                    segments.append(segment)
+                    currentIndex = endRange.upperBound
+                    foundFormat = true
+                    break
+                }
             }
-            else if let italicRange = processedText.range(of: "_", range: currentIndex..<processedText.endIndex),
-                    italicRange.lowerBound == currentIndex,
-                    let endItalic = processedText.range(of: "_", range: italicRange.upperBound..<processedText.endIndex) {
-                
-                // Extract the italic text
-                let italicText = processedText[italicRange.upperBound..<endItalic.lowerBound]
-                
-                // Add an italic segment
-                segments.append(FormattedTextSegment(
-                    text: String(italicText),
-                    font: .italicSystemFont(ofSize: UIFont.systemFontSize),
-                    foregroundColor: nil
-                ))
-                
-                // Move past the end marker
-                currentIndex = endItalic.upperBound
-            }
-            else if let highlightRange = processedText.range(of: "==", range: currentIndex..<processedText.endIndex),
-                    highlightRange.lowerBound == currentIndex,
-                    let endHighlight = processedText.range(of: "==", range: highlightRange.upperBound..<processedText.endIndex) {
-                
-                // Extract the highlighted text
-                let highlightText = processedText[highlightRange.upperBound..<endHighlight.lowerBound]
-                
-                // Add a highlighted segment
-                segments.append(FormattedTextSegment(
-                    text: String(highlightText),
-                    font: nil,
-                    foregroundColor: nil,
-                    backgroundColor: Color.yellow.opacity(0.3)
-                ))
-                
-                // Move past the end marker
-                currentIndex = endHighlight.upperBound
-            }
-            else if processedText[currentIndex] == "•" {
+            
+            // Handle bullet list item
+            if processedText[currentIndex] == "•" {
                 // Handle bullet list item
                 let lineEnd = processedText[currentIndex...].firstIndex(of: "\n") ?? processedText.endIndex
                 let listItem = processedText[currentIndex..<lineEnd]
@@ -140,7 +136,9 @@ class FormattedTextParser {
                 ))
                 
                 currentIndex = lineEnd == processedText.endIndex ? lineEnd : processedText.index(after: lineEnd)
+                foundFormat = true
             }
+            // Handle checkbox item
             else if processedText[currentIndex] == "☐" || processedText[currentIndex] == "☑" {
                 // Handle checkbox item
                 let lineEnd = processedText[currentIndex...].firstIndex(of: "\n") ?? processedText.endIndex
@@ -154,7 +152,9 @@ class FormattedTextParser {
                 ))
                 
                 currentIndex = lineEnd == processedText.endIndex ? lineEnd : processedText.index(after: lineEnd)
+                foundFormat = true
             }
+            // Handle headings
             else if let headingMatch = processedText.range(of: "^#+\\s+", options: .regularExpression, range: currentIndex..<processedText.endIndex),
                     headingMatch.lowerBound == currentIndex {
                 
@@ -179,31 +179,22 @@ class FormattedTextParser {
                 ))
                 
                 currentIndex = lineEnd == processedText.endIndex ? lineEnd : processedText.index(after: lineEnd)
+                foundFormat = true
             }
-            else {
-                // Handle plain text until the next format marker
-                let nextFormatMarker = [
-                    processedText.range(of: "**", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "_", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "==", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "\n•", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "\n☐", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "\n☑", range: currentIndex..<processedText.endIndex),
-                    processedText.range(of: "\n#", range: currentIndex..<processedText.endIndex)
-                ].compactMap { $0 }.min { $0.lowerBound < $1.lowerBound }
+            
+            // Handle plain text
+            if !foundFormat {
+                let nextFormatIndex = inlineMarkers.compactMap { marker -> String.Index? in
+                    processedText.range(of: marker.0, range: currentIndex..<processedText.endIndex)?.lowerBound
+                }.min()
                 
-                let endIndex = nextFormatMarker?.lowerBound ?? processedText.endIndex
-                
+                let endIndex = nextFormatIndex ?? processedText.endIndex
                 if currentIndex < endIndex {
-                    let plainText = processedText[currentIndex..<endIndex]
                     segments.append(FormattedTextSegment(
-                        text: String(plainText),
-                        font: nil,
-                        foregroundColor: nil
+                        text: String(processedText[currentIndex..<endIndex])
                     ))
-                    
                     currentIndex = endIndex
-                } else if currentIndex == endIndex && currentIndex != processedText.endIndex {
+                } else {
                     currentIndex = processedText.index(after: currentIndex)
                 }
             }

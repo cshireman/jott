@@ -12,22 +12,20 @@ struct CategoriesView: View {
     @StateObject private var viewModel = CategoriesViewModel()
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if viewModel.isLoading {
-                    ProgressView()
-                } else {
-                    List {
-                        ForEach(viewModel.categories) { category in
-                            CategoryRow(category: category)
-                        }
+        ZStack {
+            if viewModel.isLoading {
+                ProgressView()
+            } else {
+                List {
+                    ForEach(viewModel.categories) { category in
+                        CategoryRow(category: category)
                     }
                 }
             }
-            .navigationTitle("Categories")
-            .onAppear {
-                viewModel.loadCategories()
-            }
+        }
+        .navigationTitle("Categories")
+        .onAppear {
+            viewModel.loadCategories()
         }
     }
 }

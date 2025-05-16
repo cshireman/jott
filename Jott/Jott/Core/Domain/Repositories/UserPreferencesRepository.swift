@@ -65,6 +65,16 @@ final class UserPreferencesRepository: UserPreferencesRepositoryProtocol {
     
     func set(_ value: Bool, for key: UserPreferenceKey) {
         userDefaults.set(value, forKey: key.rawValue)
+        switch key {
+        case .enableAutoTagging:
+            NotificationCenter.default.post(name: Notification.Name("AutoTaggingChanged"), object: nil)
+        case .enableAutoSummarization:
+            NotificationCenter.default.post(name: Notification.Name("AutoSummarizationChanged"), object: nil)
+        case .enableRelatedNotes:
+            NotificationCenter.default.post(name: Notification.Name("RelatedNotesChanged"), object: nil)
+        default:
+            break
+        }
     }
     
     func set(_ value: Int?, for key: UserPreferenceKey) {
@@ -77,6 +87,9 @@ final class UserPreferencesRepository: UserPreferencesRepositoryProtocol {
     
     func set(_ value: UUID?, for key: UserPreferenceKey) {
         userDefaults.set(value?.uuidString, forKey: key.rawValue)
+        if key == .defaultCategoryId {
+            NotificationCenter.default.post(name: Notification.Name("DefaultCategoryChanged"), object: nil)
+        }
     }
     
     func setColorScheme(_ colorScheme: ColorScheme?) {
@@ -94,6 +107,7 @@ final class UserPreferencesRepository: UserPreferencesRepositoryProtocol {
         }
         
         userDefaults.set(rawValue, forKey: UserPreferenceKey.colorScheme.rawValue)
+        NotificationCenter.default.post(name: Notification.Name("ThemeChanged"), object: nil)
     }
     
     // MARK: - Default Values

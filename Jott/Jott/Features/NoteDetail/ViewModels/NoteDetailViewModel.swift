@@ -21,6 +21,7 @@ final class NoteDetailViewModel: ObservableObject {
     private let fetchNoteUseCase = FetchNotesUseCase()
     private let saveNoteUseCase = SaveNoteUseCase()
     private let deleteNoteUseCase = DeleteNoteUseCase()
+    private let getUserPreferencesUseCase = GetUserPreferencesUseCase()
     private let contentAnalysisService = ContentAnalysisService()
     
     func loadNote(id: UUID) async {
@@ -41,6 +42,14 @@ final class NoteDetailViewModel: ObservableObject {
     
     func loadRelatedNotes() async {
         guard let note = note else { return }
+        
+        let enableRelatedNotes = getUserPreferencesUseCase.getBool(for: .enableRelatedNotes)
+        
+        if !enableRelatedNotes {
+            // Clear any existing related notes if the feature is disabled
+            relatedNotes = []
+            return
+        }
         
         do {
             relatedNotes = try await contentAnalysisService.findRelatedNotes(forNoteId: note.id)
