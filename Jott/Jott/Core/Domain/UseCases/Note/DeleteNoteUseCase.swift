@@ -5,11 +5,9 @@
 //  Created by Chris Shireman on 5/15/25.
 //
 
-
 import Foundation
 
-@MainActor
-class DeleteNoteUseCase {
+actor DeleteNoteUseCase {
     @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
     
     func execute(_ note: Note) async throws {

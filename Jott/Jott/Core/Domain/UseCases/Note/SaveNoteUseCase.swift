@@ -8,8 +8,7 @@
 import Foundation
 import SwiftData
 
-@MainActor
-class SaveNoteUseCase {
+actor SaveNoteUseCase {
     @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
     
     func execute(_ note: Note) async throws {

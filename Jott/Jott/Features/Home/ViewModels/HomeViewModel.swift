@@ -5,12 +5,11 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
-
 import Foundation
 import Combine
 
 @MainActor
-class HomeViewModel: ObservableObject {
+final class HomeViewModel: ObservableObject {
     @Published var recentNotes: [Note] = []
     @Published var pinnedNotes: [Note] = []
     @Published var isLoading = false

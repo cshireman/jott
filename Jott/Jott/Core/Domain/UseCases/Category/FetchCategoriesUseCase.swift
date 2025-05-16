@@ -5,11 +5,9 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
-
 import Foundation
 
-@MainActor
-class FetchCategoriesUseCase {
+actor FetchCategoriesUseCase {
     @Injected(\.categoryRepository) private var categoryRepository: CategoryRepositoryProtocol
     
     func execute() async throws -> [Category] {

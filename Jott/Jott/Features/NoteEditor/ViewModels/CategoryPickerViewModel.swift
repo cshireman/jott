@@ -5,7 +5,6 @@
 //  Created by Chris Shireman on 5/15/25.
 //
 
-
 // CategoryPickerViewModel.swift
 import Foundation
 import SwiftUI

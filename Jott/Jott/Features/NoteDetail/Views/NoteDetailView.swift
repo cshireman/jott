@@ -91,7 +91,7 @@ struct NoteDetailView: View {
                         }
                         
                         // Content
-                        Text(note.content)
+                        FormattedTextView(text: note.content)
                             .padding(.top, 8)
                         
                         relatedNotesSection

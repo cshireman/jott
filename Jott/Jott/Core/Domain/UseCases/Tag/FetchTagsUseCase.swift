@@ -5,11 +5,9 @@
 //  Created by Chris Shireman on 5/15/25.
 //
 
-
 import Foundation
 
-@MainActor
-class FetchTagsUseCase {
+actor FetchTagsUseCase {
     @Injected(\.tagRepository) private var tagRepository: TagRepositoryProtocol
     
     func execute() async throws -> [Tag] {

@@ -5,11 +5,9 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
-
 import Foundation
 
-@MainActor
-class FetchNotesUseCase {
+actor FetchNotesUseCase {
     @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
     
     func execute() async throws -> [Note] {

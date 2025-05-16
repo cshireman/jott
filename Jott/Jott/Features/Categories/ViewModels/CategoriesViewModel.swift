@@ -5,12 +5,11 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
-
 import Foundation
 import Combine
 
 @MainActor
-class CategoriesViewModel: ObservableObject {
+final class CategoriesViewModel: ObservableObject {
     @Published var categories: [Category] = []
     @Published var isLoading = false
     @Published var errorMessage: String?

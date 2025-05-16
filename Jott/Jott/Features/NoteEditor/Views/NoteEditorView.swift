@@ -10,13 +10,17 @@ import SwiftUI
 struct NoteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: NoteEditorViewModel
+    @StateObject private var formattingViewModel = TextFormattingViewModel()
     @FocusState private var focusField: Field?
     
     // State for various sheets and dialogs
     @State private var showCategoryPicker = false
     @State private var showTagPicker = false
     @State private var newTagName = ""
+    
     @State private var showAddTagDialog = false
+    @State private var showFormatting = false
+    @State private var selectedRanges: [NSRange] = []
     
     enum Field: Hashable {
         case title
@@ -31,6 +35,18 @@ struct NoteEditorView: View {
         VStack(spacing: 0) {
             // Toolbar
             editorToolbar
+            
+            if showFormatting {
+                FormattingToolbar(
+                    onFormatting: { style in
+                        formattingViewModel.applyFormatting(style)
+                    },
+                    onToggleCheck: {
+                        formattingViewModel.toggleChecklistItem()
+                    }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
             
             // Editor content
             ScrollView {
@@ -75,14 +91,21 @@ struct NoteEditorView: View {
                     .padding(.vertical, 8)
                     
                     // Content field
-                    TextEditor(text: $viewModel.content)
-                        .frame(minHeight: 300)
-                        .focused($focusField, equals: .content)
-                        .onChange(of: viewModel.content) { _, _ in
-                            viewModel.hasUnsavedChanges = true
+                    CustomTextEditor(
+                        text: $formattingViewModel.text,
+                        onSelectionChange: { range in
+                            formattingViewModel.selectionRange = range
+                        },
+                        onTextViewCreated: { textView in
+                            // Link the textView with the viewModel
+                            formattingViewModel.setTextView(textView)
                         }
-                        .cornerRadius(8)
-                        .padding(.vertical, 4)
+                    )
+                    .frame(minHeight: 300)
+                    .onChange(of: formattingViewModel.text) { _, newValue in
+                        viewModel.content = newValue
+                        viewModel.hasUnsavedChanges = true
+                    }
                 }
                 .padding()
             }
@@ -158,6 +181,7 @@ struct NoteEditorView: View {
         }
         .onAppear {
             // Focus on title if new note, content if existing
+            formattingViewModel.text = viewModel.content
             focusField = viewModel.isNewNote ? .title : .content
         }
         .onDisappear {
@@ -171,29 +195,13 @@ struct NoteEditorView: View {
     
     private var editorToolbar: some View {
         HStack(spacing: 16) {
-            // Basic formatting buttons
             Button(action: {
-                // Bold text implementation
+                withAnimation {
+                    showFormatting.toggle()
+                }
             }) {
-                Image(systemName: "bold")
-            }
-            
-            Button(action: {
-                // Italic text implementation
-            }) {
-                Image(systemName: "italic")
-            }
-            
-            Button(action: {
-                // Checklist implementation
-            }) {
-                Image(systemName: "checklist")
-            }
-            
-            Button(action: {
-                // Bullet list implementation
-            }) {
-                Image(systemName: "list.bullet")
+                Image(systemName: "textformat")
+                    .foregroundColor(showFormatting ? .blue : .primary)
             }
             
             Spacer()
@@ -318,7 +326,6 @@ struct NoteEditorView: View {
             }
         }
     }
-    
     
     private func getCategoryColor(_ category: Category) -> Color {
         if let hexColor = category.colorHex, let color = Color(hex: hexColor) {
