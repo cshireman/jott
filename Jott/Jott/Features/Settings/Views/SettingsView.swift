@@ -5,10 +5,12 @@
 //  Created by Chris Shireman on 5/14/25.
 //
 
+// SettingsView.swift
 import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @Environment(\.colorScheme) private var systemColorScheme
     @State private var showAnalysisProgress = false
     @State private var analysisProgress = 0.0
     @State private var showDefaultCategoryPicker = false
@@ -24,13 +26,27 @@ struct SettingsView: View {
                         Text("Dark").tag(ColorScheme.dark as ColorScheme?)
                     }
                     .pickerStyle(SegmentedPickerStyle())
+                    .onChange(of: viewModel.colorScheme) { _, _ in
+                        viewModel.saveColorScheme()
+                    }
                 }
                 
                 // AI Features section
                 Section(header: Text("AI Features")) {
                     Toggle("Auto Tagging", isOn: $viewModel.enableAutoTagging)
+                        .onChange(of: viewModel.enableAutoTagging) { _, _ in
+                            viewModel.saveAutoTagging()
+                        }
+                    
                     Toggle("Auto Summarization", isOn: $viewModel.enableAutoSummarization)
+                        .onChange(of: viewModel.enableAutoSummarization) { _, _ in
+                            viewModel.saveAutoSummarization()
+                        }
+                    
                     Toggle("Related Notes", isOn: $viewModel.enableRelatedNotes)
+                        .onChange(of: viewModel.enableRelatedNotes) { _, _ in
+                            viewModel.saveRelatedNotes()
+                        }
                     
                     Button {
                         runContentAnalysis()
@@ -66,32 +82,8 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Data Management section
-                Section(header: Text("Data Management")) {
-                    Toggle("iCloud Sync", isOn: $viewModel.iCloudSyncEnabled)
-                    
-                    Button {
-                        // Export data action
-                    } label: {
-                        Text("Export Data")
-                    }
-                    
-                    Button {
-                        // Import data action
-                    } label: {
-                        Text("Import Data")
-                    }
-                }
-                
-                // About section
-                Section(header: Text("About")) {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("1.0.0")
-                            .foregroundColor(.secondary)
-                    }
-                    
+                // Stats section
+                Section(header: Text("Stats")) {
                     HStack {
                         Text("Notes")
                         Spacer()
@@ -110,6 +102,16 @@ struct SettingsView: View {
                         Text("Tags")
                         Spacer()
                         Text("\(viewModel.totalTags)")
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                // About section
+                Section(header: Text("About")) {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("1.0.0")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -159,24 +161,9 @@ struct SettingsView: View {
                     selectedCategory: viewModel.availableCategories.first(where: { $0.id == viewModel.defaultCategoryId }),
                     onSelectCategory: { category in
                         viewModel.defaultCategoryId = category?.id
-                        viewModel.saveSettings()
+                        viewModel.saveDefaultCategory()
                     }
                 )
-            }
-            .onChange(of: viewModel.colorScheme) { _, _ in
-                viewModel.saveSettings()
-            }
-            .onChange(of: viewModel.enableAutoTagging) { _, _ in
-                viewModel.saveSettings()
-            }
-            .onChange(of: viewModel.enableAutoSummarization) { _, _ in
-                viewModel.saveSettings()
-            }
-            .onChange(of: viewModel.enableRelatedNotes) { _, _ in
-                viewModel.saveSettings()
-            }
-            .onChange(of: viewModel.iCloudSyncEnabled) { _, _ in
-                viewModel.saveSettings()
             }
         }
     }

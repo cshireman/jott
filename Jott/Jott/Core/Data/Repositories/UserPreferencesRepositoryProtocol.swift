@@ -19,6 +19,9 @@ enum UserPreferenceKey: String {
     case showSummaries
     case lastBackupDate
     case iCloudSyncEnabled
+    case enableAutoTagging
+    case enableAutoSummarization
+    case enableRelatedNotes
 }
 
 protocol UserPreferencesRepositoryProtocol: Sendable {

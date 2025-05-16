@@ -12,6 +12,7 @@ import SwiftData
 struct JottApp: App {
     
     private var container: ModelContainer = ModelContainerHelper.shared.container
+    @StateObject private var themeManager = AppThemeManager()
     
     init() {
         setupDependencies()
@@ -20,6 +21,7 @@ struct JottApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(themeManager)
         }
         .modelContainer(container)
     }

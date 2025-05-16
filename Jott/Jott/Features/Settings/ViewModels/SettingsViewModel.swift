@@ -1,12 +1,5 @@
-//
-//  SettingsViewModel.swift
-//  Jott
-//
-//  Created by Chris Shireman on 5/16/25.
-//
-
-
 // SettingsViewModel.swift
+import Foundation
 import SwiftUI
 import Combine
 
@@ -20,73 +13,68 @@ final class SettingsViewModel: ObservableObject {
     @Published var enableAutoSummarization = true
     @Published var enableRelatedNotes = true
     
-    // Data management
-    @Published var iCloudSyncEnabled = true
-    
-    // Note defaults
+    // Default settings
     @Published var defaultCategoryId: UUID? = nil
-    
-    // Available categories for default selection
     @Published var availableCategories: [Category] = []
     
-    // Status
+    // App info
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    // User stats
+    // Analytics
     @Published var totalNotes = 0
     @Published var totalCategories = 0
     @Published var totalTags = 0
     
-    private let fetchCategoriesUseCase = FetchCategoriesUseCase()
-    private let contentAnalysisService = ContentAnalysisService()
-    private let userPreferencesRepository = UserPreferencesRepository()
+    // Repositories and use cases
+    @Injected(\.userPreferencesRepository) private var userPreferencesRepository: UserPreferencesRepositoryProtocol
+    @Injected(\.noteRepository) private var noteRepository: NoteRepositoryProtocol
+    @Injected(\.categoryRepository) private var categoryRepository: CategoryRepositoryProtocol
+    @Injected(\.tagRepository) private var tagRepository: TagRepositoryProtocol
     
-    private var cancellables = Set<AnyCancellable>()
+    private let fetchCategoriesUseCase = FetchCategoriesUseCase()
+    private let getUserPreferencesUseCase = GetUserPreferencesUseCase()
+    private let saveUserPreferencesUseCase = SaveUserPreferencesUseCase()
+    private let contentAnalysisService = ContentAnalysisService()
     
     init() {
-        loadSettings()
-        
         Task {
+            await loadPreferences()
             await loadCategories()
             await loadStats()
         }
     }
     
-    func loadSettings() {
-        // Load from UserDefaults
-        enableAutoTagging = UserDefaults.standard.bool(forKey: "enableAutoTagging")
-        enableAutoSummarization = UserDefaults.standard.bool(forKey: "enableAutoSummarization")
-        enableRelatedNotes = UserDefaults.standard.bool(forKey: "enableRelatedNotes")
-        iCloudSyncEnabled = UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
-        
-        if let colorSchemeValue = UserDefaults.standard.string(forKey: "colorScheme") {
-            colorScheme = colorSchemeValue == "dark" ? .dark : (colorSchemeValue == "light" ? .light : nil)
-        }
-        
-        if let defaultCategoryString = UserDefaults.standard.string(forKey: "defaultCategoryId") {
-            defaultCategoryId = UUID(uuidString: defaultCategoryString)
-        }
+    func loadPreferences() async {
+        // Get preferences from repository
+        colorScheme = getUserPreferencesUseCase.getColorScheme()
+        enableAutoTagging = getUserPreferencesUseCase.getBool(for: .enableAutoTagging)
+        enableAutoSummarization = getUserPreferencesUseCase.getBool(for: .enableAutoSummarization)
+        enableRelatedNotes = getUserPreferencesUseCase.getBool(for: .enableRelatedNotes)
+        defaultCategoryId = getUserPreferencesUseCase.getUUID(for: .defaultCategoryId)
     }
     
-    func saveSettings() {
-        UserDefaults.standard.set(enableAutoTagging, forKey: "enableAutoTagging")
-        UserDefaults.standard.set(enableAutoSummarization, forKey: "enableAutoSummarization")
-        UserDefaults.standard.set(enableRelatedNotes, forKey: "enableRelatedNotes")
-        UserDefaults.standard.set(iCloudSyncEnabled, forKey: "iCloudSyncEnabled")
-        
-        // Save color scheme preference
-        if let scheme = colorScheme {
-            UserDefaults.standard.set(scheme == .dark ? "dark" : "light", forKey: "colorScheme")
-        } else {
-            UserDefaults.standard.set(nil, forKey: "colorScheme")
-        }
-        
-        // Save default category
-        UserDefaults.standard.set(defaultCategoryId?.uuidString, forKey: "defaultCategoryId")
+    func saveColorScheme() {
+        saveUserPreferencesUseCase.setColorScheme(colorScheme)
     }
     
-    private func loadCategories() async {
+    func saveAutoTagging() {
+        saveUserPreferencesUseCase.set(enableAutoTagging, for: .enableAutoTagging)
+    }
+    
+    func saveAutoSummarization() {
+        saveUserPreferencesUseCase.set(enableAutoSummarization, for: .enableAutoSummarization)
+    }
+    
+    func saveRelatedNotes() {
+        saveUserPreferencesUseCase.set(enableRelatedNotes, for: .enableRelatedNotes)
+    }
+    
+    func saveDefaultCategory() {
+        saveUserPreferencesUseCase.set(defaultCategoryId, for: .defaultCategoryId)
+    }
+    
+    func loadCategories() async {
         do {
             availableCategories = try await fetchCategoriesUseCase.execute()
         } catch {
@@ -94,9 +82,21 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
-    private func loadStats() async {
-        // Load stats from repositories
-        // This would typically query the repositories for counts
+    func loadStats() async {
+        do {
+            // Get counts of notes, categories, and tags
+            let notes = try await noteRepository.fetchNotes()
+            let categories = try await categoryRepository.fetchCategories()
+            let tags = try await tagRepository.fetchTags()
+            
+            await MainActor.run {
+                totalNotes = notes.count
+                totalCategories = categories.count
+                totalTags = tags.count
+            }
+        } catch {
+            errorMessage = "Failed to load statistics: \(error.localizedDescription)"
+        }
     }
     
     func runContentAnalysis(progressCallback: @MainActor (Double) -> Void) async -> Int {
