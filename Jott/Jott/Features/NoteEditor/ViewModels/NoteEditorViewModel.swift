@@ -22,6 +22,7 @@ final class NoteEditorViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isNewNote: Bool = true
     @Published var hasUnsavedChanges: Bool = false
+    @Published var suggestedCategory: Category?
     
     // Private properties
     private var noteId: UUID?
@@ -198,44 +199,48 @@ final class NoteEditorViewModel: ObservableObject {
     }
     
     private func analyzeContent() async {
-        // Skip analysis for very short content
-        guard content.count > 20 else { return }
+        // Skip analysis for very short content or if analysis is disabled
+        guard content.count > 20 else {
+            // Clear suggestions for very short content
+            suggestedTags = []
+            return
+        }
         
-        // Generate tag suggestions
         do {
-            // Fetch all user tags using the use case
+            // Fetch all user tags
             let allTags = try await fetchTagsUseCase.execute()
             
-            // Get suggested tags
+            // Get suggested tags using our enhanced service
             let suggested = await textAnalysisService.suggestTags(
                 from: content,
                 existingTags: tags,
                 userTags: allTags
             )
             
-            // Update UI on main thread
-            await MainActor.run {
-                suggestedTags = suggested
-            }
+            // Update the suggested tags on the main thread
+            suggestedTags = suggested
             
-            // If uncategorized, try to suggest a category
+            // If note is uncategorized, try to suggest a category
             if category == nil {
                 let categories = try await fetchCategoriesUseCase.execute()
-                if let suggestedCategory = await textAnalysisService.suggestCategory(from: content, categories: categories) {
-                    // Could add auto-categorization in settings
-                    // Right now just leaving as a suggestion capability
+                if let suggestion = await textAnalysisService.suggestCategory(from: content, categories: categories) {
+                    // Rather than automatically applying, we could store this as a suggestion
+                    // and show a UI element to accept it
+                    suggestedCategory = suggestion
                 }
             }
             
-            // Update note summary if needed (for longer notes)
+            // For longer notes, generate summary and extract key entities
             if content.count > 200, let noteId = noteId {
-                if let summary = await textAnalysisService.generateSummary(from: content) {
-                    try await saveNoteUseCase.updateML(
-                        noteId: noteId,
-                        summary: summary,
-                        keyEntities: await textAnalysisService.extractKeywords(from: content, maxKeywords: 5)
-                    )
-                }
+                // Use the enhanced analysis capabilities
+                let analysis = await textAnalysisService.analyzeContent(content)
+                
+                // Update the note's ML properties
+                try await saveNoteUseCase.updateML(
+                    noteId: noteId,
+                    summary: analysis.summary,
+                    keyEntities: analysis.keywords
+                )
             }
         } catch {
             print("Analysis error: \(error.localizedDescription)")

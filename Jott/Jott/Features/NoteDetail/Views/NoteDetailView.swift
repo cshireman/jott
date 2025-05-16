@@ -60,8 +60,32 @@ struct NoteDetailView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                     .padding()
-                                    .background(Color.secondary.opacity(0.1))
-                                    .cornerRadius(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.secondary.opacity(0.1))
+                                    )
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
+                        if let keyEntities = note.keyEntities, !keyEntities.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Key Topics")
+                                    .font(.headline)
+                                
+                                HStack {
+                                    ForEach(keyEntities, id: \.self) { entity in
+                                        Text(entity)
+                                            .font(.caption)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(
+                                                Capsule()
+                                                    .fill(Color.blue.opacity(0.1))
+                                            )
+                                            .foregroundColor(.blue)
+                                    }
+                                }
                             }
                             .padding(.vertical, 8)
                         }
@@ -69,6 +93,8 @@ struct NoteDetailView: View {
                         // Content
                         Text(note.content)
                             .padding(.top, 8)
+                        
+                        relatedNotesSection
                         
                         // Metadata
                         VStack(alignment: .leading, spacing: 4) {
@@ -160,6 +186,47 @@ struct NoteDetailView: View {
             await viewModel.loadNote(id: noteId)
         }
     }
+    
+    private var relatedNotesSection: some View {
+        Group {
+            if !viewModel.relatedNotes.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Related Notes")
+                        .font(.headline)
+                    
+                    ForEach(viewModel.relatedNotes) { relatedNote in
+                        NavigationLink(value: relatedNote.id) {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(relatedNote.title)
+                                        .font(.subheadline)
+                                        .lineLimit(1)
+                                    
+                                    Text(relatedNote.content.prefix(60) + "...")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.secondary.opacity(0.1))
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.vertical, 16)
+            }
+        }
+    }
+
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()

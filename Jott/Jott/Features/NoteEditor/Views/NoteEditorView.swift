@@ -43,6 +43,10 @@ struct NoteEditorView: View {
                             viewModel.hasUnsavedChanges = true
                         }
                     
+                    if viewModel.category == nil {
+                        suggestedCategoryView
+                    }
+                    
                     // Tags
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
@@ -277,6 +281,44 @@ struct NoteEditorView: View {
             alignment: .top
         )
     }
+    
+    private var suggestedCategoryView: some View {
+        Group {
+            if let suggestedCategory = viewModel.suggestedCategory, viewModel.category == nil {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Suggested Category")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    HStack {
+                        if let iconName = suggestedCategory.iconName {
+                            Image(systemName: iconName)
+                                .foregroundColor(getCategoryColor(suggestedCategory))
+                        }
+                        
+                        Text(suggestedCategory.name)
+                            .font(.caption)
+                        
+                        Spacer()
+                        
+                        Button("Apply") {
+                            viewModel.setCategory(suggestedCategory)
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.secondary.opacity(0.1))
+                    )
+                }
+                .padding(.horizontal)
+                .padding(.top, 4)
+            }
+        }
+    }
+    
     
     private func getCategoryColor(_ category: Category) -> Color {
         if let hexColor = category.colorHex, let color = Color(hex: hexColor) {
