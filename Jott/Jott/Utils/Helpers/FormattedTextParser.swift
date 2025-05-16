@@ -122,8 +122,10 @@ class FormattedTextParser {
                 }
             }
             
+            currentIndex = min(currentIndex, processedText.endIndex)
+            
             // Handle bullet list item
-            if processedText[currentIndex] == "•" {
+            if currentIndex < processedText.endIndex && processedText[currentIndex] == "•" {
                 // Handle bullet list item
                 let lineEnd = processedText[currentIndex...].firstIndex(of: "\n") ?? processedText.endIndex
                 let listItem = processedText[currentIndex..<lineEnd]
@@ -139,7 +141,7 @@ class FormattedTextParser {
                 foundFormat = true
             }
             // Handle checkbox item
-            else if processedText[currentIndex] == "☐" || processedText[currentIndex] == "☑" {
+            else if currentIndex < processedText.endIndex && (processedText[currentIndex] == "☐" || processedText[currentIndex] == "☑") {
                 // Handle checkbox item
                 let lineEnd = processedText[currentIndex...].firstIndex(of: "\n") ?? processedText.endIndex
                 let checkboxItem = processedText[currentIndex..<lineEnd]
@@ -218,7 +220,7 @@ struct FormattedTextSegment: Identifiable {
     let listType: ListType
     let headingLevel: Int
     
-    init(text: String, font: UIFont? = nil, foregroundColor: Color? = nil, 
+    init(text: String, font: UIFont? = nil, foregroundColor: Color? = nil,
          backgroundColor: Color? = nil, listType: ListType = .none, headingLevel: Int = 0) {
         self.text = text
         self.font = font
