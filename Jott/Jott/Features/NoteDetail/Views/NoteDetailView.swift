@@ -216,7 +216,7 @@ struct NoteDetailView: View {
                             .padding(10)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.secondary.opacity(0.1))
+                                    .fill(Color.secondary.opacity(0.1).gradient)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())

@@ -263,7 +263,6 @@ final class NoteEditorViewModel: ObservableObject {
         }
         
         do {
-            
             if enableAutoTagging {
                 let allTags = try await fetchTagsUseCase.execute()
                 
@@ -277,8 +276,6 @@ final class NoteEditorViewModel: ObservableObject {
                 // Update the suggested tags on the main thread
                 suggestedTags = suggested
             }
-            // Fetch all user tags
-            
             
             // If note is uncategorized, try to suggest a category
             if category == nil {

@@ -197,6 +197,13 @@ final class NoteRepository: NoteRepositoryProtocol {
         }
         note.tags.removeAll()
         
+        // Save tags if their model context is nil
+        for tag in tags {
+            if tag.modelContext == nil {
+                context.insert(tag)
+            }
+        }
+        
         // Then add tags by fetching them from the same context
         let tagIds = tags.map { $0.id }
         if !tagIds.isEmpty {

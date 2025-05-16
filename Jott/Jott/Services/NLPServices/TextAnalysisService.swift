@@ -7,7 +7,6 @@
 
 import Foundation
 import NaturalLanguage
-import CoreML
 
 actor TextAnalysisService {
     // NLP taggers for different types of analysis

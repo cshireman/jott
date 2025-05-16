@@ -77,7 +77,6 @@ struct HomeView: View {
                     NoteCardView(note: note)
                 }
             }
-            .padding(.horizontal)
         }
     }
     
@@ -96,8 +95,11 @@ struct HomeView: View {
                         NoteCardView(note: note)
                     }
                 }
-                .padding(.horizontal)
             }
         }
     }
+}
+
+#Preview {
+    HomeView()
 }

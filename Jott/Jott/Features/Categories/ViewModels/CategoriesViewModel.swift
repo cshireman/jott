@@ -15,6 +15,7 @@ final class CategoriesViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     private let fetchCategoriesUseCase = FetchCategoriesUseCase()
+    @Injected(\.categoryRepository) private var repository: CategoryRepositoryProtocol
     
     func loadCategories() {
         isLoading = true
@@ -33,6 +34,39 @@ final class CategoriesViewModel: ObservableObject {
                     self.errorMessage = "Failed to load categories: \(error.localizedDescription)"
                     self.isLoading = false
                 }
+            }
+        }
+    }
+    
+    func addCategory(_ category: Category) async {
+        do {
+            try await repository.saveCategory(category)
+            await loadCategories()
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to add category: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func updateCategory(_ category: Category) async {
+        do {
+            try await repository.saveCategory(category)
+            await loadCategories()
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to update category: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func deleteCategory(_ category: Category) async {
+        do {
+            try await repository.deleteCategory(category)
+            await loadCategories()
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to delete category: \(error.localizedDescription)"
             }
         }
     }
