@@ -87,14 +87,3 @@ struct CategoriesView: View {
     }
 }
 
-struct CategoryRow: View {
-    let category: Category
-            VStack(alignment: .leading, spacing: 4) {
-                Text(category.name)
-                    .font(.headline)
-                
-                    Text("\(category.childCategories.count) subcategories")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            
