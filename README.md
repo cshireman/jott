@@ -71,17 +71,17 @@ open Jott.xcodeproj
 
 ## Demo Video
 
-![](README/demo.gif)<!-- {"width":371} -->
+![](Resources/demo.gif)<!-- {"width":371} -->
 
 ## Screenshots
 
-![](README/jott1.png)<!-- {"width":261} -->
-![](README/jott2.png)<!-- {"width":261} -->
-![](README/jott3.png)<!-- {"width":261} -->
-![](README/jott4.png)<!-- {"width":261} -->
-![](README/jott5.png)<!-- {"width":261} -->
-![](README/jott6.png)<!-- {"width":261} -->
-![](README/jott7.png)<!-- {"width":261} -->
+![](Resources/jott1.png)<!-- {"width":261} -->
+![](Resources/jott2.png)<!-- {"width":261} -->
+![](Resources/jott3.png)<!-- {"width":261} -->
+![](Resources/jott4.png)<!-- {"width":261} -->
+![](Resources/jott5.png)<!-- {"width":261} -->
+![](Resources/jott6.png)<!-- {"width":261} -->
+![](Resources/jott7.png)<!-- {"width":261} -->
 
 ## Architecture
 
