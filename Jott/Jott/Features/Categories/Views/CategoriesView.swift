@@ -1,10 +1,3 @@
-//
-//  CategoriesView.swift
-//  Jott
-//
-//  Created by Chris Shireman on 5/14/25.
-//
-
 import SwiftUI
 
 struct CategoriesView: View {
@@ -86,4 +79,3 @@ struct CategoriesView: View {
         }
     }
 }
-

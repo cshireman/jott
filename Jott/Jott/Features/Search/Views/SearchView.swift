@@ -55,7 +55,7 @@ struct SearchView: View {
                 } else if viewModel.searchResults.isEmpty {
                     // No results state
                     VStack(spacing: 24) {
-                        Image(systemName: "questionmark")
+                        Image(systemName: "questionmark.circle")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary)
                         
@@ -100,6 +100,16 @@ struct SearchView: View {
             if let noteId = selectedNoteId {
                 NoteDetailView(noteId: noteId)
             }
+        }
+        .navigationDestination(for: UUID.self) { noteId in
+            NoteDetailView(
+                noteId: noteId,
+                onDelete: {
+                    Task {
+                        await viewModel.performSearch()
+                    }
+                }
+            )
         }
         .sheet(isPresented: $showFilterSheet) {
             SearchFilterView(

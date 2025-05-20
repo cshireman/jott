@@ -68,28 +68,6 @@ struct NoteDetailView: View {
                             .padding(.vertical, 8)
                         }
                         
-                        if let keyEntities = note.keyEntities, !keyEntities.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Key Topics")
-                                    .font(.headline)
-                                
-                                HStack {
-                                    ForEach(keyEntities, id: \.self) { entity in
-                                        Text(entity)
-                                            .font(.caption)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(
-                                                Capsule()
-                                                    .fill(Color.blue.opacity(0.1))
-                                            )
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 8)
-                        }
-                        
                         // Content
                         FormattedTextView(text: note.content)
                             .padding(.top, 8)

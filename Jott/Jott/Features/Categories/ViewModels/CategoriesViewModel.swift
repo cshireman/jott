@@ -41,7 +41,7 @@ final class CategoriesViewModel: ObservableObject {
     func addCategory(_ category: Category) async {
         do {
             try await repository.saveCategory(category)
-            await loadCategories()
+            loadCategories()
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to add category: \(error.localizedDescription)"
@@ -52,7 +52,7 @@ final class CategoriesViewModel: ObservableObject {
     func updateCategory(_ category: Category) async {
         do {
             try await repository.saveCategory(category)
-            await loadCategories()
+            loadCategories()
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to update category: \(error.localizedDescription)"
@@ -63,7 +63,7 @@ final class CategoriesViewModel: ObservableObject {
     func deleteCategory(_ category: Category) async {
         do {
             try await repository.deleteCategory(category)
-            await loadCategories()
+            loadCategories()
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to delete category: \(error.localizedDescription)"

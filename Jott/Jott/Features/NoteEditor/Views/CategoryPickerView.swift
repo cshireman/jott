@@ -21,35 +21,15 @@ struct CategoryPickerView: View {
                 if viewModel.isLoading {
                     ProgressView()
                 } else {
-                    List {
-                        // No category option
+                    List(viewModel.categoryListItems, children: \.children) { item in
                         Button {
-                            onSelectCategory(nil)
+                            onSelectCategory(item.category)
                             dismiss()
                         } label: {
-                            HStack {
-                                Text("No Category")
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                if selectedCategory == nil {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                        
-                        // Root categories
-                        ForEach(viewModel.getRootCategories()) { category in
                             CategoryPickerRow(
-                                category: category,
+                                item: item,
                                 selectedCategory: selectedCategory,
-                                allCategories: viewModel.categories,
-                                onSelect: { selected in
-                                    onSelectCategory(selected)
-                                    dismiss()
-                                }
+                                allCategories: viewModel.categories
                             )
                         }
                     }
@@ -73,8 +53,12 @@ struct CategoryPickerView: View {
                 Text(viewModel.errorMessage ?? "")
             }
             .task {
-                await viewModel.loadCategories()
+                await viewModel.loadCategoryListItems()
             }
         }
     }
+}
+
+#Preview {
+    CategoryPickerView(selectedCategory: nil, onSelectCategory: { _ in })
 }

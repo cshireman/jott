@@ -83,6 +83,7 @@ struct NoteEditorView: View {
                                     .background(
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(Color.blue, lineWidth: 1)
+                                            .padding(.vertical, 1)
                                     )
                                     .foregroundColor(.blue)
                             }
@@ -94,7 +95,9 @@ struct NoteEditorView: View {
                     CustomTextEditor(
                         text: $formattingViewModel.text,
                         onSelectionChange: { range in
-                            formattingViewModel.selectionRange = range
+                            Task { @MainActor in
+                                formattingViewModel.selectionRange = range
+                            }
                         },
                         onTextViewCreated: { textView in
                             // Link the textView with the viewModel
@@ -118,6 +121,16 @@ struct NoteEditorView: View {
         .navigationTitle(viewModel.isNewNote ? "New Note" : "Edit Note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    Task {
+                        dismiss()
+                    }
+                } label: {
+                    Text("Cancel")
+                }
+            }
+            
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     Task {
@@ -249,6 +262,7 @@ struct NoteEditorView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
+                .padding(.top, 8)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -271,6 +285,7 @@ struct NoteEditorView: View {
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.blue, lineWidth: 1)
+                                    .padding(2)
                             )
                             .foregroundColor(.blue)
                         }
@@ -288,6 +303,7 @@ struct NoteEditorView: View {
                 .foregroundColor(Color.gray.opacity(0.2)),
             alignment: .top
         )
+        
     }
     
     private var suggestedCategoryView: some View {

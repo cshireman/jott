@@ -12,6 +12,7 @@ struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @State private var selectedNoteId: UUID?
     @State private var showNoteDetail = false
+    @State private var showEditSheet = false
     
     var body: some View {
         ZStack {
@@ -34,7 +35,7 @@ struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    viewModel.createNewNote()
+                    showEditSheet = true
                 }) {
                     Image(systemName: "square.and.pencil")
                 }
@@ -64,6 +65,13 @@ struct HomeView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $showEditSheet,
+               onDismiss: { Task { viewModel.loadData() }
+        }) {
+            NavigationStack {
+                NoteEditorView(note: nil)
+            }
         }
     }
     
